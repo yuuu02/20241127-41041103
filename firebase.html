@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>會員系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-blue': '#4285f4',
+                        'brand-blue-hover': '#357ae8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Modal 樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div id="authContainer" class="w-full max-w-md bg-white shadow-lg rounded-xl p-6">
+        <!-- 登入/註冊選擇畫面 -->
+        <div id="authChoiceSection" class="text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">會員系統</h2>
+            <div class="space-y-4">
+                <button id="showLoginBtn" class="w-full py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-hover transition duration-300">
+                    會員登入
+                </button>
+                <button id="showRegisterBtn" class="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300">
+                    會員註冊
+                </button>
+                <button id="googleSignInBtn" class="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300">
+                    Google 快速登入
+                </button>
+            </div>
+        </div>
+
+        <!-- 電子郵件登入區域 -->
+        <div id="loginSection" class="hidden">
+            <h3 class="text-xl font-semibold text-center text-gray-800 mb-6">會員登入</h3>
+            <div class="space-y-4">
+                <input type="email" id="loginEmail" placeholder="電子郵件" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                <input type="password" id="loginPassword" placeholder="密碼" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                <button id="emailLoginBtn" class="w-full py-3 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-hover transition duration-300">
+                    登入
+                </button>
+                <div id="loginErrorMsg" class="text-red-500 text-center"></div>
+            </div>
+        </div>
+
+        <!-- 電子郵件註冊區域 -->
+        <div id="registerSection" class="hidden">
+            <h3 class="text-xl font-semibold text-center text-gray-800 mb-6">會員註冊</h3>
+            <div class="space-y-4">
+                <input type="text" id="registerName" placeholder="姓名" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input type="email" id="registerEmail" placeholder="電子郵件" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input type="password" id="registerPassword" placeholder="密碼" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input type="password" id="confirmPassword" placeholder="確認密碼" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="emailRegisterBtn" class="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300">
+                    註冊
+                </button>
+                <div id="registerErrorMsg" class="text-red-500 text-center"></div>
+            </div>
+        </div>
+
+        <!-- 使用者資訊區域 -->
+        <div id="userInfoSection" class="hidden">
+            <div class="flex flex-col items-center">
+                <img id="profileImage" class="w-32 h-32 rounded-full object-cover mb-4" src="" alt="個人頭像">
+                <h2 id="userName" class="text-xl font-bold text-gray-800"></h2>
+                
+                <div class="w-full mt-6 space-y-4">
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <strong class="text-gray-600">Email:</strong> 
+                        <span id="userEmail" class="text-gray-800"></span>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <strong class="text-gray-600">最後登入時間:</strong> 
+                        <span id="lastLoginTime" class="text-gray-800"></span>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <strong class="text-gray-600">註冊時間:</strong> 
+                        <span id="registeredTime" class="text-gray-800"></span>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <strong class="text-gray-600">登入次數:</strong> 
+                        <span id="loginCount" class="text-gray-800"></span>
+                    </div>
+                </div>
+
+                <button id="logoutBtn" class="mt-6 w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300">
+                    登出
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- 個人資料管理 Modal -->
+    <div id="profileManagementModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4">個人資料管理</h2>
+            <div class="space-y-4">
+                <input type="text" id="profileName" placeholder="姓名" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                <input type="text" id="profilePhone" placeholder="手機號碼" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                <input type="text" id="profileAddress" placeholder="地址" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                <div class="flex justify-between">
+                    <button id="saveProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded">儲存</button>
+                    <button id="closeProfileModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 資料列表 Modal -->
+    <div id="dataListModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4">個人資料列表</h2>
+            <table id="profileListTable" class="w-full">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="p-2">姓名</th>
+                        <th class="p-2">手機</th>
+                        <th class="p-2">地址</th>
+                        <th class="p-2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="profileListBody"></tbody>
+            </table>
+            <div class="mt-4 text-center">
+                <button id="addNewProfileBtn" class="bg-green-500 text-white px-4 py-2 rounded">新增資料</button>
+                <button id="closeDataListModalBtn" class="bg-gray-500 text-white px-4 py-2 ml-2 rounded">關閉</button>
+            </div>
+        </div>
+    </div>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // 確保在DOM完全載入後再執行
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase 配置
+            const firebaseConfig = {
+                apiKey: "AIzaSyD035ks3v6o625FBJC5PpkQEbh3aW80W3E",
+                authDomain: "project-5643215706914066472.firebaseapp.com",
+                databaseURL: "https://project-5643215706914066472-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "project-5643215706914066472",
+                storageBucket: "project-5643215706914066472.appspot.com",
+                messagingSenderId: "862517984626",
+                appId: "1:862517984626:web:428a18c79624f1500c71eb"
+            };
+            attachEventListeners();
+            // 初始化 Firebase
+            firebase.initializeApp(firebaseConfig);
+
+            // 取得實例
+            const auth = firebase.auth();
+            const database = firebase.database();
+
+            // DOM 元素
+            const authChoiceSection = document.getElementById('authChoiceSection');
+            const loginSection = document.getElementById('loginSection');
+            const registerSection = document.getElementById('registerSection');
+            const userInfoSection = document.getElementById('userInfoSection');
+
+            // 更新顯示/隱藏邏輯
+            function showSection(section) {
+                // 先隱藏所有區段
+                [authChoiceSection, loginSection, registerSection, userInfoSection].forEach(el => {
+                    el.style.display = 'none';
+                });
+
+                // 顯示指定區段
+                section.style.display = 'block';
+
+                console.log('顯示區段:', section.id);
+            }
+
+            // 顯示登入畫面
+            document.getElementById('showLoginBtn').addEventListener('click', () => {
+                console.log('showLoginBtn 被點擊');
+                showSection(loginSection);
+            });
+
+            // 顯示註冊畫面
+            document.getElementById('showRegisterBtn').addEventListener('click', () => {
+                console.log('showRegisterBtn 被點擊');
+                showSection(registerSection);
+            });
+            // 為登入輸入框添加 Enter 鍵事件監聽器
+            document.getElementById('loginEmail').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailLoginBtn').click();
+                }
+            });
+
+            document.getElementById('loginPassword').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailLoginBtn').click();
+                }
+            });
+
+            // 為註冊輸入框添加 Enter 鍵事件監聽器
+            document.getElementById('registerName').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailRegisterBtn').click();
+                }
+            });
+
+            document.getElementById('registerEmail').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailRegisterBtn').click();
+                }
+            });
+
+            document.getElementById('registerPassword').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailRegisterBtn').click();
+                }
+            });
+
+            document.getElementById('confirmPassword').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('emailRegisterBtn').click();
+                }
+            });
+            // 電子郵件登入
+            document.getElementById('emailLoginBtn').addEventListener('click', () => {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const loginErrorMsg = document.getElementById('loginErrorMsg');
+
+
+                // 清除之前的錯誤訊息
+                loginErrorMsg.textContent = '';
+
+                // 直接嘗試登入
+                auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    console.log('登入成功');
+                    updateUserProfile(userCredential.user);
+                })
+                .catch((error) => {
+                    console.error('登入錯誤:', error);
+
+                    let errorMessage = '登入失敗，請檢查您的帳號和密碼';
+
+                    switch (error.code) {
+                        case 'auth/invalid-email':
+                            errorMessage = '電子郵件格式不正確';
+                            break;
+                        case 'auth/user-disabled':
+                            errorMessage = '此帳號已被停用';
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage = '密碼錯誤，請重新輸入';
+                            break;
+                        case 'auth/user-not-found':
+                            errorMessage = '查無此帳號';
+                            break;
+                        case 'auth/network-request-failed':
+                            errorMessage = '網路連線錯誤，請檢查您的網路狀態';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = '登入嘗試次數過多，請稍後再試';
+                            break;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: '登入失敗',
+                        text: errorMessage,
+                        confirmButtonText: '確定'
+                    });
+                });
+            });
+
+            // 檢查事件是否正確綁定的測試函數
+            function attachEventListeners() {
+                const showLoginBtn = document.getElementById('showLoginBtn');
+                const showRegisterBtn = document.getElementById('showRegisterBtn');
+                const emailLoginBtn = document.getElementById('emailLoginBtn');
+                const emailRegisterBtn = document.getElementById('emailRegisterBtn');
+
+                console.log('檢查按鈕元素：', {
+                    showLoginBtn: !!showLoginBtn,
+                    showRegisterBtn: !!showRegisterBtn,
+                    emailLoginBtn: !!emailLoginBtn,
+                    emailRegisterBtn: !!emailRegisterBtn
+                });
+
+                if (showLoginBtn) {
+                    showLoginBtn.addEventListener('click', () => {
+                        console.log('showLoginBtn 被點擊 (重新綁定)');
+                        showSection(loginSection);
+                    });
+                }
+
+                if (showRegisterBtn) {
+                    showRegisterBtn.addEventListener('click', () => {
+                        console.log('showRegisterBtn 被點擊 (重新綁定)');
+                        showSection(registerSection);
+                    });
+                }
+            }
+
+            // 電子郵件註冊
+            document.getElementById('emailRegisterBtn').addEventListener('click', () => {
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const registerErrorMsg = document.getElementById('registerErrorMsg');
+
+                // 清除之前的錯誤訊息
+                registerErrorMsg.textContent = '';
+
+                // 檢查密碼是否一致
+                if (password !== confirmPassword) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '註冊失敗',
+                        text: '密碼與確認密碼不符',
+                        confirmButtonText: '確定'
+                    });
+                    return;
+                }
+
+                // 檢查輸入是否為空
+                if (!name || !email || !password) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '註冊失敗',
+                        text: '請填寫所有欄位',
+                        confirmButtonText: '確定'
+                    });
+                    return;
+                }
+
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        // 更新使用者名稱
+                        return user.updateProfile({ 
+                            displayName: name,
+                            photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+                        }).then(() => user);
+                    })
+                    .then((user) => {
+                        // 在資料庫中建立使用者資料
+                        const registrationTime = new Date().toISOString();
+                        return database.ref('users/' + user.uid).set({
+                            name: name,
+                            email: email,
+                            registrationTime: registrationTime,
+                            loginCount: 1,
+                            lastLoginTime: registrationTime
+                        }).then(() => user);
+                    })
+                    .then((user) => {
+                        console.log('註冊成功');
+                        updateUserProfile(user);
+                    })
+                    .catch((error) => {
+                        console.error('註冊錯誤:', error);
+
+                        let errorMessage = '註冊失敗，請稍後再試';
+
+                        // 更詳細的錯誤判斷
+                        switch (error.code) {
+                            case 'auth/email-already-in-use':
+                                errorMessage = '此電子郵件已被使用';
+                                break;
+                            case 'auth/invalid-email':
+                                errorMessage = '電子郵件格式不正確';
+                                break;
+                            case 'auth/weak-password':
+                                errorMessage = '密碼強度不足，至少需要6個字元';
+                                break;
+                            case 'auth/network-request-failed':
+                                errorMessage = '網路連線錯誤，請檢查您的網路狀態';
+                                break;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: '註冊失敗',
+                            text: errorMessage,
+                            confirmButtonText: '確定'
+                        });
+                    });
+            });
+
+            // Google 快速登入
+            document.getElementById('googleSignInBtn').addEventListener('click', () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                
+                auth.signInWithPopup(provider)
+                    .then((result) => {
+                        const user = result.user;
+                        console.log('Google 登入成功');
+                        updateUserProfileWithDatabase(user);
+                    })
+                    .catch((error) => {
+                        console.error('Google 登入錯誤:', error);
+                    });
+            });
+
+            // 登出
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                auth.signOut()
+                    .then(() => {
+                        updateUIForLoggedOut();
+                    })
+                    .catch((error) => {
+                        console.error('登出錯誤:', error);
+                    });
+            });
+
+            // 更新使用者資料庫資訊
+            function updateUserProfileWithDatabase(user) {
+                const userRef = database.ref('users/' + user.uid);
+                const currentTime = new Date().toISOString();
+
+                userRef.once('value').then((snapshot) => {
+                    const userData = snapshot.val() || {};
+                    const loginCount = (userData.loginCount || 0) + 1;
+                    
+                    // 更新資料庫資訊
+                    return userRef.update({
+                        name: user.displayName,
+                        email: user.email,
+                        profilePicture: user.photoURL,
+                        loginCount: loginCount,
+                        lastLoginTime: currentTime,
+                        registrationTime: userData.registrationTime || currentTime
+                    });
+                }).then(() => {
+                    updateUserProfile(user);
+                }).catch((error) => {
+                    console.error('更新使用者資料錯誤:', error);
+                });
+            }
+
+            // 更新使用者介面
+            function updateUserProfile(user) {
+                // 取得使用者資料庫資訊
+                const userRef = database.ref('users/' + user.uid);
+                userRef.once('value').then((snapshot) => {
+                    const userData = snapshot.val() || {};
+
+                    // 更新頭像
+                    const profileImage = document.getElementById('profileImage');
+                    profileImage.src = user.photoURL || 
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`;
+
+                    // 更新使用者資訊
+                    document.getElementById('userName').textContent = user.displayName || '使用者';
+                    document.getElementById('userEmail').textContent = user.email;
+                    
+                    // 格式化時間
+                    const formatDate = (dateString) => {
+                        return new Date(dateString).toLocaleString('zh-TW', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    };
+
+                    // 顯示最後登入時間
+                    document.getElementById('lastLoginTime').textContent = 
+                        formatDate(userData.lastLoginTime || new Date());
+
+                    // 顯示註冊時間
+                    document.getElementById('registeredTime').textContent = 
+                        formatDate(userData.registrationTime || new Date());
+
+                    // 顯示登入次數
+                    document.getElementById('loginCount').textContent = 
+                        (userData.loginCount || 1) + ' 次';
+
+                    // 隱藏其他畫面
+                    authChoiceSection.style.display = 'none';
+                    loginSection.style.display = 'none';
+                    registerSection.style.display = 'none';
+                    
+                    // 顯示使用者資訊
+                    userInfoSection.style.display = 'block';
+                });
+            }
+
+            // 錯誤訊息處理
+            function getErrorMessage(error) {
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    return '此電子郵件已被使用';
+                case 'auth/invalid-email':
+                    return '電子郵件格式不正確';
+                case 'auth/weak-password':
+                    return '密碼強度不足，至少需要6個字元';
+                case 'auth/wrong-password':
+                    return '密碼錯誤，請重新輸入';
+                case 'auth/user-not-found':
+                    return '查無此帳號，請檢查電子郵件是否正確';
+                case 'auth/network-request-failed':
+                    return '網路連線錯誤，請檢查您的網路狀態';
+                case 'auth/too-many-requests':
+                    return '登入嘗試次數過多，請稍後再試';
+                default:
+                    return error.message || '發生未知錯誤，請稍後再試';
+            }
+        }
+
+            // 更新介面為未登入狀態
+            function updateUIForLoggedOut() {
+                authChoiceSection.style.display = 'block';
+                loginSection.style.display = 'none';
+                registerSection.style.display = 'none';
+                userInfoSection.style.display = 'none';
+            }
+
+            // 當使用者登入後，添加兩個按鈕到 userInfoSection
+            function addProfileManagementButtons(user) {
+                // 先移除可能已存在的按鈕容器
+                const existingButtonContainer = document.querySelector('#userInfoSection .mt-4');
+                if (existingButtonContainer) {
+                    existingButtonContainer.remove();
+                }
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'mt-4 space-x-4';
+                buttonContainer.innerHTML = `
+                    <button id="showProfileListBtn" class="bg-blue-500 text-white px-4 py-2 rounded">
+                        管理個人資料
+                    </button>
+                    <button id="showProfileModalBtn" class="bg-green-500 text-white px-4 py-2 rounded">
+                        新增個人資料
+                    </button>
+                `;
+                userInfoSection.appendChild(buttonContainer);
+
+            // 顯示個人資料列表
+            document.getElementById('showProfileListBtn').addEventListener('click', loadProfileList);
+            document.getElementById('showProfileModalBtn').addEventListener('click', showProfileModal);
+
+            // 關閉 Modal 按鈕事件
+            document.getElementById('closeProfileModalBtn').addEventListener('click', () => {
+                document.getElementById('profileManagementModal').style.display = 'none';
+            });
+            document.getElementById('closeDataListModalBtn').addEventListener('click', () => {
+                document.getElementById('dataListModal').style.display = 'none';
+            });
+
+            // 儲存個人資料
+            document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+
+            // 新增資料按鈕事件
+            document.getElementById('addNewProfileBtn').addEventListener('click', showProfileModal);
+        }
+
+        // 顯示個人資料 Modal
+        function showProfileModal(profileData = null) {
+            const modal = document.getElementById('profileManagementModal');
+            const dataListModal = document.getElementById('dataListModal');
+            
+            // 隱藏資料列表 Modal
+            dataListModal.style.display = 'none';
+            
+            // 顯示個人資料管理 Modal
+            modal.style.display = 'block';
+
+            // 重置表單
+            const nameInput = document.getElementById('profileName');
+            const phoneInput = document.getElementById('profilePhone');
+            const addressInput = document.getElementById('profileAddress');
+
+            if (profileData) {
+                // 編輯模式
+                nameInput.value = profileData.name || '';
+                phoneInput.value = profileData.phone || '';
+                addressInput.value = profileData.address || '';
+                
+                // 儲存當前編輯的 ID
+                this.currentEditProfileId = profileData.id;
+            } else {
+                // 新增模式
+                nameInput.value = '';
+                phoneInput.value = '';
+                addressInput.value = '';
+                this.currentEditProfileId = null;
+            }
+        }
+
+        // 儲存個人資料
+        function saveProfile() {
+            const user = firebase.auth().currentUser;
+            const name = document.getElementById('profileName').value;
+            const phone = document.getElementById('profilePhone').value;
+            const address = document.getElementById('profileAddress').value;
+
+            if (!name || !phone || !address) {
+                Swal.fire('錯誤', '請填寫所有欄位', 'error');
+                return;
+            }
+
+            const profilesRef = database.ref(`users/${user.uid}/profiles`);
+
+            if (this.currentEditProfileId) {
+                // 更新現有資料
+                profilesRef.child(this.currentEditProfileId).update({
+                    name, phone, address
+                }).then(() => {
+                    Swal.fire('成功', '資料已更新', 'success');
+                    document.getElementById('profileManagementModal').style.display = 'none';
+                    loadProfileList();
+                }).catch((error) => {
+                    Swal.fire('錯誤', '更新失敗: ' + error.message, 'error');
+                });
+            } else {
+                // 新增資料
+                profilesRef.push({
+                    name, phone, address
+                }).then(() => {
+                    Swal.fire('成功', '資料已新增', 'success');
+                    document.getElementById('profileManagementModal').style.display = 'none';
+                    loadProfileList();
+                }).catch((error) => {
+                    Swal.fire('錯誤', '新增失敗: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // 載入個人資料列表
+        function loadProfileList() {
+            const user = firebase.auth().currentUser;
+            const profilesRef = database.ref(`users/${user.uid}/profiles`);
+            const tableBody = document.getElementById('profileListBody');
+            
+            profilesRef.once('value').then((snapshot) => {
+                const profiles = snapshot.val() || {};
+                tableBody.innerHTML = ''; // 清空表格
+
+                Object.keys(profiles).forEach((key) => {
+                    const profile = profiles[key];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-2 border">${profile.name}</td>
+                        <td class="p-2 border">${profile.phone}</td>
+                        <td class="p-2 border">${profile.address}</td>
+                        <td class="p-2 border text-center">
+                            <button onclick="editProfile('${key}')" class="bg-blue-500 text-white px-2 py-1 rounded mr-2">編輯</button>
+                            <button onclick="deleteProfile('${key}')" class="bg-red-500 text-white px-2 py-1 rounded">刪除</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+                document.getElementById('dataListModal').style.display = 'block';
+            });
+        }
+
+        // 編輯個人資料
+        window.editProfile = function(profileId) {
+            const user = firebase.auth().currentUser;
+            const profileRef = database.ref(`users/${user.uid}/profiles/${profileId}`);
+            
+            profileRef.once('value').then((snapshot) => {
+                const profileData = snapshot.val();
+                profileData.id = profileId;
+                showProfileModal(profileData);
+                document.getElementById('dataListModal').style.display = 'none';
+            });
+        }
+
+        // 刪除個人資料
+        window.deleteProfile = function(profileId) {
+            Swal.fire({
+                title: '確定要刪除嗎？',
+                text: "此操作無法復原",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '確定刪除',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const user = firebase.auth().currentUser;
+                    const profileRef = database.ref(`users/${user.uid}/profiles/${profileId}`);
+                    
+                    profileRef.remove().then(() => {
+                        Swal.fire('已刪除', '資料已成功刪除', 'success');
+                        loadProfileList();
+                    }).catch((error) => {
+                        Swal.fire('錯誤', '刪除失敗: ' + error.message, 'error');
+                    });
+                }
+            });
+        }
+
+        // 修改原本的 onAuthStateChanged
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('使用者已登入');
+                updateUserProfileWithDatabase(user);
+                
+                // 在這裡調用新增按鈕的函數
+                addProfileManagementButtons(user);
+            } else {
+                console.log('使用者未登入');
+                updateUIForLoggedOut();
+            }
+        });
+        });
+    </script>
+</body>
+</html>
